@@ -7,14 +7,13 @@ import anisotropy_functions as af
 
 class Cell():
     
-    def __init__(self, proteins, poisson):
+    def __init__(self, proteins, poisson, size=500):
         self.proteins = proteins
         self.poisson = poisson
-        self.cell_image = self.create_cell()
+        self.cell_image, self.mask = self.create_cell(size)
         
         
-    def create_cell(self):
-        size = 1000
+    def create_cell(self, size):
         image = np.zeros((size, size))
         half_point = np.floor(size // 2).astype(int)
         initial_point = np.floor(0.2 * size).astype(int)
@@ -33,8 +32,11 @@ class Cell():
             image = stats.poisson.rvs(image * self.proteins)
         else:
             image *= self.proteins
+            
+        mask = np.zeros_like(image)
+        mask[np.nonzero(image)] = 1
         
-        return np.floor(image).astype(int)
+        return np.floor(image).astype(int), mask.astype(bool)
     
     
     def add_biosensor(self, biosensor):
@@ -52,7 +54,7 @@ class Cell():
         monomer_fraction = self.biosensor.get_monomer_fraction(anisotropy)
         fraction_image = stats.binom.rvs(self.cell_image, monomer_fraction)
         fraction_image = fraction_image.astype(float)
-        nonzeros = np.nonzero(self.cell_image)
+        nonzeros = self.mask
         
         fraction_image[nonzeros] = fraction_image[nonzeros] / self.cell_image[nonzeros]
         
@@ -63,7 +65,7 @@ class Cell():
         if anisotropy is not None:
             self.generate_fraction_image(anisotropy)
         
-        nonzeros = np.nonzero(self.fraction_image)
+        nonzeros = self.mask
         self.parallel_image = np.zeros_like(self.fraction_image)
         self.parallel_image[nonzeros] = af.intensity_parallel_from_monomer(self.fraction_image[nonzeros], 
                                                                            self.biosensor.anisotropy_monomer, 
