@@ -7,7 +7,7 @@ import anisotropy_functions as af
 
 class Cell():
     
-    def __init__(self, proteins, poisson, size=500):
+    def __init__(self, proteins, poisson, size=200):
         self.proteins = proteins
         self.poisson = poisson
         self.cell_image, self.mask = self.create_cell(size)
